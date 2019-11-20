@@ -1,6 +1,6 @@
 #!/bin/env python3
 
-# bluetooth-player-polybar.py
+# bt_player_polybar.py
 
 def main():
     pass
