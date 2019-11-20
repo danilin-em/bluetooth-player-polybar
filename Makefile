@@ -8,5 +8,10 @@ init:
 		python3 -m pip install -r requirements.dev.txt; \
 	)
 	@echo "Activate env: source env/bin/activate"
-test:
+lint:
+	@( \
+		source env/bin/activate; \
+		python -m pylint bt_player_polybar.py; \
+	)
+test: lint
 	python3 -m unittest test.py
