@@ -8,3 +8,5 @@ init:
 		python3 -m pip install -r requirements.dev.txt; \
 	)
 	@echo "Activate env: source env/bin/activate"
+test:
+	python3 -m unittest test.py
