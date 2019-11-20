@@ -14,4 +14,7 @@ lint:
 		python -m pylint bt_player_polybar.py; \
 	)
 test: lint
-	python3 -m unittest test.py
+	@( \
+		source env/bin/activate; \
+		python3 -m unittest test.py; \
+	)
