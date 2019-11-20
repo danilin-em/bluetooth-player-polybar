@@ -1,9 +1,14 @@
-#!/bin/env python3
+"""Bluetooth Player for Polybar
 
-# bt_player_polybar.py
+@author Evgenii Danilin <evgenii.danilin.m@gmail.com
+
+"""
+
 
 def main():
-    pass
+    """ Main """
+    return True
+
 
 if __name__ == '__main__':
     main()
