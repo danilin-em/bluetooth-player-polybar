@@ -11,7 +11,7 @@ init:
 lint:
 	@( \
 		source env/bin/activate; \
-		python -m pylint bt_player_polybar.py; \
+		python -m pylint bt_player_control; \
 	)
 test: lint
 	@( \

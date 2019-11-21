@@ -1,4 +1,4 @@
-"""Bluetooth Player for Polybar
+"""Bluetooth Player Control
 
 @author Evgenii Danilin <evgenii.danilin.m@gmail.com
 
@@ -17,7 +17,7 @@ class CliIface():
     """ Cli Interface """
     actions = {}
     parser = ErrorRaisingArgumentParser(
-        description='Bluetooth Player manager for Polybar')
+        description='Bluetooth Player Control')
 
     def __init__(self):
         self.parser.add_argument(

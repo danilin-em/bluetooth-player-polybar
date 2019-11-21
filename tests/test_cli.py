@@ -5,7 +5,7 @@ Cli Interface Tests
 import unittest
 import argparse
 
-import bt_player_polybar
+from bt_player_control import bt_player_control
 
 
 class CliIfaceTest(unittest.TestCase):
@@ -13,14 +13,14 @@ class CliIfaceTest(unittest.TestCase):
     def test_cli_parser(self):
         """ Try get status """
         action = 'status'
-        cli = bt_player_polybar.CLI
+        cli = bt_player_control.CLI
         args = cli.parse([action])
         self.assertEqual(args, argparse.Namespace(action=action, s=None))
 
     def test_cli_parser_unknown_action(self):
         """ Pass invalid action """
         action = 'INVALID_ACTION'
-        cli = bt_player_polybar.CLI
+        cli = bt_player_control.CLI
         self.assertRaises(ValueError, cli.parse, [action])
 
     # TODO app status
