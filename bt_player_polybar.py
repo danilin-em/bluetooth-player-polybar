@@ -7,10 +7,16 @@ import sys
 import argparse
 
 
+class ErrorRaisingArgumentParser(argparse.ArgumentParser):
+    """ Catch Errors in argparse """
+    def error(self, message):
+        raise ValueError(message)
+
+
 class CliIface():
     """ Cli Interface """
     actions = {}
-    parser = argparse.ArgumentParser(
+    parser = ErrorRaisingArgumentParser(
         description='Bluetooth Player manager for Polybar')
 
     def __init__(self):
