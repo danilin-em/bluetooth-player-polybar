@@ -16,5 +16,5 @@ lint:
 test: lint
 	@( \
 		source env/bin/activate; \
-		python3 -m unittest test.py; \
+		python3 -m unittest tests; \
 	)
