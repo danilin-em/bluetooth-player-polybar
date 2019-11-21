@@ -13,7 +13,7 @@ class BaseTest(unittest.TestCase):
     """ Base Test """
     def test_main(self):
         """ Base Main Test """
-        self.assertTrue(bt_player_polybar.main())
+        self.assertTrue(bt_player_polybar.main(['status']))
 
 
 if __name__ == '__main__':
