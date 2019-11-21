@@ -51,6 +51,7 @@ CLI = CliIface()
 @CLI.action
 def app_status():
     """ Get Status line """
+    print('Some song...')
     return 'status'
 
 
