@@ -1,2 +1,2 @@
-# bluetooth-player-polybar
-Bluetooth Player control for Polybar
+# bt_player_control
+Bluetooth Player Control cli (for Polybar, i3status, etc...)
