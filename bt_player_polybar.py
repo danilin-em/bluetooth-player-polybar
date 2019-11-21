@@ -13,6 +13,12 @@ class CliIface():
     parser = argparse.ArgumentParser(
         description='Bluetooth Player manager for Polybar')
 
+    def __init__(self):
+        self.parser.add_argument(
+            '-s',
+            type=str,
+            help='Some arg')
+
     def parse(self, argv):
         """ Parse args """
         actions_keys = self.actions.keys()
