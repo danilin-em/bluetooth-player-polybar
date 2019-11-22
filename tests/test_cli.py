@@ -5,7 +5,7 @@ Cli Interface Tests
 import unittest
 import argparse
 
-from bt_player_control import bt_player_control
+import bt_player_control
 
 
 class CliIfaceTest(unittest.TestCase):
