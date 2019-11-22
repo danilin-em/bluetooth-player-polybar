@@ -11,11 +11,11 @@ init:
 lint:
 	@( \
 		source env/bin/activate; \
-		python -m flake8 bt_player_control.py; \
-		python -m pylint bt_player_control.py; \
+		python -m flake8 bt_player_control.py tests/*; \
+		python -m pylint bt_player_control.py tests/*; \
 	)
 test: lint
 	@( \
 		source env/bin/activate; \
-		python3 -m unittest tests; \
+		python3 -m unittest tests/test_*.py; \
 	)
