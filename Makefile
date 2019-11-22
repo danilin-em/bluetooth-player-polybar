@@ -11,7 +11,8 @@ init:
 lint:
 	@( \
 		source env/bin/activate; \
-		python -m pylint bt_player_polybar.py; \
+		python -m flake8 bt_player_control.py; \
+		python -m pylint bt_player_control.py; \
 	)
 test: lint
 	@( \
