@@ -190,6 +190,7 @@ class Actions:
 
     def action_play(self):
         """ Player: play """
+        # TODO Add Toggle mode
         if self.player.offline:
             return False
         return self.player.iface.Play()
