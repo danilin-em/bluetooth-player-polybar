@@ -12,7 +12,7 @@ lint:
 	@( \
 		source env/bin/activate; \
 		python -m flake8 bt_player_control.py tests/*; \
-		python -m pylint bt_player_control.py tests/*; \
+		python -m pylint --disable=fixme bt_player_control.py tests/*; \
 	)
 test: lint
 	@( \

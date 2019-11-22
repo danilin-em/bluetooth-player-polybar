@@ -25,11 +25,13 @@ class AppOfflineException(Exception):
 
 class ErrorRaisingArgumentParser(argparse.ArgumentParser):
     """ Catch Errors in argparse """
+
     def error(self, message):
         raise AppArgumentParserException(message)
 
 
 def find_player_path():
+    """ Default Player Finder """
     bus = dbus.SystemBus()
     manager = dbus.Interface(bus.get_object("org.bluez", "/"),
                              "org.freedesktop.DBus.ObjectManager")
@@ -43,43 +45,46 @@ def find_player_path():
 class Player:
     """ Player DBus Wrapper """
     offline = False
-    dbus_interface_path = 'org.bluez.MediaPlayer1'
-    dbus_properties_path = 'org.freedesktop.DBus.Properties'
+    dbus_interface = 'org.bluez.MediaPlayer1'
+    dbus_properties = 'org.freedesktop.DBus.Properties'
     player_path = None
-    status_format = '{status} {artist} — {title}'
-    status_playing = '>'
-    status_paused = '||'
-    status_offline = 'X'
+    status = {
+        'format': '{status} {artist} — {title}',
+        'playing': '>',
+        'paused': '||',
+        'offline': 'X',
+    }
 
     def __init__(self, opt=None):
         if opt.status_format:
-            self.status_format = opt.status_format
+            self.status['format'] = opt.status_format
         if opt.status_playing:
-            self.status_playing = opt.status_playing
+            self.status['playing'] = opt.status_playing
         if opt.status_paused:
-            self.status_paused = opt.status_paused
+            self.status['paused'] = opt.status_paused
         if opt.status_offline:
-            self.status_offline = opt.status_offline
+            self.status['offline'] = opt.status_offline
         if opt.player_path:
             self.player_path = opt.status_paused
         try:
             self.player_path = find_player_path()
         except AppOfflineException:
-            self.status_format = '{status}'
+            self.status['format'] = '{status}'
             self.offline = True
-            return None
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        bus = dbus.SystemBus()
-        self.bluez = bus.get_object('org.bluez', self.player_path)
-        self.iface = dbus.Interface(self.bluez,
-                                    dbus_interface=self.dbus_interface_path)
+        if not self.offline:
+            dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+            bus = dbus.SystemBus()
+            self.bluez = bus.get_object('org.bluez', self.player_path)
+            self.iface = dbus.Interface(self.bluez,
+                                        dbus_interface=self.dbus_interface)
 
     def get_props(self):
+        """ Get Player Props """
         try:
             dbus_properties_iface = dbus.Interface(
-                self.bluez, dbus_interface=self.dbus_properties_path)
-            prop = dbus_properties_iface.GetAll(self.dbus_interface_path)
-        except Exception:
+                self.bluez, dbus_interface=self.dbus_properties)
+            prop = dbus_properties_iface.GetAll(self.dbus_interface)
+        except AttributeError:
             return {
                 'Status': 'offline',
                 'Track': {
@@ -90,13 +95,17 @@ class Player:
         return prop
 
     def get_status_format(self, status=None):
-        status_format = self.status_format
+        """ Pass in to Status format Symbols """
+        status_format = self.status['format']
         if status == 'playing':
-            status_format = status_format.replace('{status}', self.status_playing)
+            status_format = status_format.replace(
+                '{status}', self.status['playing'])
         elif status == 'paused':
-            status_format = status_format.replace('{status}', self.status_paused)
+            status_format = status_format.replace(
+                '{status}', self.status['paused'])
         else:
-            status_format = status_format.replace('{status}', self.status_offline)
+            status_format = status_format.replace(
+                '{status}', self.status['offline'])
         return status_format
 
 
@@ -147,6 +156,7 @@ def cli(argv):
     try:
         args = parser.parse_args(argv)
     except AppArgumentParserException as error:
+        # TODO Use logger for Exceptions
         print(error)
         return None
     return args
@@ -154,6 +164,7 @@ def cli(argv):
 
 class Actions:
     """ App Actions """
+
     def __init__(self, player=None):
         self.player = player
 
@@ -213,8 +224,8 @@ def main(argv):
     args = cli(argv)
     if not args:
         return False
-    pl = Player(args)
-    act = Actions(pl)
+    bt_player = Player(args)
+    act = Actions(bt_player)
     return act.exec(args.action)
 
 
