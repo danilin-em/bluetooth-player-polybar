@@ -3,98 +3,138 @@
 @author Evgenii Danilin <evgenii.danilin.m@gmail.com
 
 """
+
 import sys
 import argparse
+
+import dbus
+import dbus.mainloop.glib
+
+SERVICE_NAME = "org.bluez"
+ADAPTER_INTERFACE = SERVICE_NAME + ".Adapter1"
+DEVICE_INTERFACE = SERVICE_NAME + ".Device1"
+
+
+def find_player_path(pattern=None):
+    bus = dbus.SystemBus()
+    manager = dbus.Interface(bus.get_object("org.bluez", "/"),
+                             "org.freedesktop.DBus.ObjectManager")
+    objects = manager.GetManagedObjects()
+    for path, _ in objects.items():
+        if path.endswith('player0'):
+            return path
+    raise Exception("Bluetooth adapter not found")
+
+
+class AppExeption(Exception):
+    """ App Exeption """
 
 
 class ErrorRaisingArgumentParser(argparse.ArgumentParser):
     """ Catch Errors in argparse """
     def error(self, message):
-        raise ValueError(message)
+        raise AppExeption(message)
 
 
-class CliIface():
-    """ Cli Interface """
-    actions = {}
+class Player:
+    """ Player DBus Wrapper """
+    dbus_interface_path = 'org.bluez.MediaPlayer1'
+    dbus_properties_path = 'org.freedesktop.DBus.Properties'
+
+    def __init__(self, path=None):
+        path = find_player_path()
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        bus = dbus.SystemBus()
+        self.bluez = bus.get_object('org.bluez', path)
+        self.iface = dbus.Interface(self.bluez,
+                                    dbus_interface=self.dbus_interface_path)
+
+    def get_props(self):
+        dbus_properties_iface = dbus.Interface(
+            self.bluez, dbus_interface=self.dbus_properties_path)
+        prop = dbus_properties_iface.GetAll(self.dbus_interface_path)
+        return prop
+
+
+def cli(argv):
+    """ Cli Parser """
+    actions_names = [
+        'status',
+        'play',
+        'pause',
+        'stop',
+        'next',
+        'previous',
+    ]
     parser = ErrorRaisingArgumentParser(
         description='Bluetooth Player Control')
+    parser.add_argument(
+        '-p',
+        type=str,
+        help='Player path')
 
-    def __init__(self):
-        self.parser.add_argument(
-            '-s',
-            type=str,
-            help='Some arg')
-
-    def parse(self, argv):
-        """ Parse args """
-        actions_keys = self.actions.keys()
-        self.parser.add_argument(
-            'action',
-            type=str,
-            choices=actions_keys,
-            help='app actions')
-        args = self.parser.parse_args(argv)
-        return args
-
-    def action(self, func):
-        """ Add Action """
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        _, name = func.__name__.split('_', 1)
-        self.actions[name] = wrapper
-        return wrapper
-
-    def exec(self, action):
-        """ Execute action by Name """
-        if action in self.actions:
-            return self.actions[action]()
-        raise 'Unknown action'
+    parser.add_argument(
+        'action',
+        type=str,
+        choices=actions_names,
+        help='app actions')
+    try:
+        args = parser.parse_args(argv)
+    except AppExeption as error:
+        print(error)
+        return None
+    return args
 
 
-CLI = CliIface()
+class Actions:
+    """ App Actions """
+    def __init__(self, player=None):
+        self.player = player
 
+    def exec(self, name='status'):
+        """ Execute Action """
+        name = 'action_%s' % name
+        action = getattr(self, name, False)
+        if not action:
+            raise Exception('Unknown action: %s' % name)
+        return action()
 
-@CLI.action
-def app_status():
-    """ Get Status line """
-    print('Some song...')
-    return 'status'
+    def action_status(self):
+        """ Get Status line """
+        prop = self.player.get_props()
+        status = '> {} {} — {}'.format(prop['Status'], prop['Track']['Artist'], prop['Track']['Title'])
+        print(status)
+        return status
 
+    def action_play(self):
+        """ Player: play """
+        return self.player.iface.Play()
 
-@CLI.action
-def player_play():
-    """ Player: play """
-    return 'play'
+    def action_pause(self):
+        """ Player: pause """
+        return self.player.iface.Pause()
 
+    def action_stop(self):
+        """ Player: stop """
+        return self.player.iface.Stop()
 
-@CLI.action
-def player_pause():
-    """ Player: pause """
-    return 'pause'
+    def action_next(self):
+        """ Player: next """
+        return self.player.iface.Next()
 
-
-@CLI.action
-def player_stop():
-    """ Player: stop """
-    return 'stop'
-
-
-@CLI.action
-def player_next():
-    """ Player: next """
-    return 'next'
-
-
-@CLI.action
-def player_previous():
-    """ Player: previous """
-    return 'previous'
+    def action_previous(self):
+        """ Player: previous """
+        return self.player.iface.Previous()
 
 
 def main(argv):
     """ Main """
-    args = CLI.parse(argv)
-    return CLI.exec(args.action)
+    args = cli(argv)
+    if not args:
+        return False
+    pl = Player(args.p)
+    act = Actions(pl)
+    return act.exec(args.action)
 
 
 if __name__ == '__main__':
