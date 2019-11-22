@@ -10,18 +10,26 @@ import bt_player_control
 
 class CliIfaceTest(unittest.TestCase):
     """ Cli Interface Tests """
+    options = {
+        'player_path': None,
+        'status_format': None,
+        'status_offline': None,
+        'status_paused': None,
+        'status_playing': None
+    }
+
     def test_cli_parser(self):
         """ Try get status """
         action = 'status'
-        cli = bt_player_control.CLI
-        args = cli.parse([action])
-        self.assertEqual(args, argparse.Namespace(action=action, s=None))
+        args = bt_player_control.cli([action])
+        self.assertEqual(args,
+                         argparse.Namespace(action=action, **self.options))
 
     def test_cli_parser_unknown_action(self):
         """ Pass invalid action """
         action = 'INVALID_ACTION'
-        cli = bt_player_control.CLI
-        self.assertRaises(ValueError, cli.parse, [action])
+        args = bt_player_control.cli([action])
+        self.assertEqual(args, None)
 
     # TODO app status
     # TODO player_play
