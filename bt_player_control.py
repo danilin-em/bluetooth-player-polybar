@@ -83,7 +83,7 @@ class Player:
         try:
             dbus_properties_iface = dbus.Interface(
                 self.bluez, dbus_interface=self.dbus_properties)
-            prop = dbus_properties_iface.GetAll(self.dbus_interface)
+            props = dbus_properties_iface.GetAll(self.dbus_interface)
         except AttributeError:
             return {
                 'Status': 'offline',
@@ -92,7 +92,9 @@ class Player:
                     'Title': None,
                 }
             }
-        return prop
+        if 'Title' not in props['Track']:
+            props['Track']['Title'] = ''
+        return props
 
     def get_status_format(self, status=None):
         """ Pass in to Status format Symbols """
@@ -190,9 +192,11 @@ class Actions:
 
     def action_play(self):
         """ Player: play """
-        # TODO Add Toggle mode
         if self.player.offline:
             return False
+        prop = self.player.get_props()
+        if prop['Status'] == 'playing':
+            return self.action_pause()
         return self.player.iface.Play()
 
     def action_pause(self):
