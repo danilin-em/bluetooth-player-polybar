@@ -53,6 +53,7 @@ class Player:
         'playing': '>',
         'paused': '||',
         'offline': 'X',
+        'size': 79,
     }
 
     def __init__(self, opt=None):
@@ -64,6 +65,8 @@ class Player:
             self.status['paused'] = opt.status_paused
         if opt.status_offline:
             self.status['offline'] = opt.status_offline
+        if opt.status_size:
+            self.status['size'] = opt.status_size
         if opt.player_path:
             self.player_path = opt.status_paused
         try:
@@ -151,6 +154,11 @@ def cli(argv):
         metavar='SYMBOL',
         help='Status "Offline"')
     parser.add_argument(
+        '--status-size',
+        type=int,
+        metavar='LEN',
+        help='Status line size')
+    parser.add_argument(
         'action',
         type=str,
         choices=actions_names,
@@ -187,6 +195,8 @@ class Actions:
             status = status.format(
                 artist=prop['Track']['Artist'],
                 title=prop['Track']['Title'])
+        if len(status) > self.player.status['size']:
+            status = status
         print(status)
         return status
 
