@@ -56,6 +56,53 @@ def find_player_path():
     raise AppOfflineException('Bluetooth adapter not found')
 
 
+class DevShm:
+    """ Manager /dev/shm """
+    __namespace = None
+    __filepath = None
+
+    def __init__(self, namespace=__file__):
+        self.__set_namespace(str(namespace))
+
+    def __set_namespace(self, namespace):
+        """ Set Namespace """
+        self.__namespace = namespace.replace('.', '-')\
+            .replace('/', '-')\
+            .replace(' ', '_')\
+            .replace('\\', '-')
+        self.__set_filepath()
+        return self.__namespace
+
+    def get_namespace(self):
+        """ Get Namespace """
+        return self.__namespace
+
+    def __set_filepath(self):
+        """ Set File path """
+        self.__filepath = '/dev/shm/%s' % str(self.__namespace)
+        return self.__filepath
+
+    def get_filepath(self):
+        """ Get File path """
+        return self.__filepath
+
+    def set(self, name, value=None):
+        """ Set Value """
+        with open(self.__filepath+'-'+name, 'w+') as file:
+            file.write(str(value))
+        return value
+
+    def get(self, name, default=None):
+        """ Get Value """
+        value = default
+        try:
+            with open(self.__filepath+'-'+name, 'r') as file:
+                value = file.read()
+        except FileNotFoundError:
+            self.set(name, value)
+        return value
+
+
 class Player:
     """ Player DBus Wrapper """
     offline = False
