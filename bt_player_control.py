@@ -30,15 +30,18 @@ class ErrorRaisingArgumentParser(argparse.ArgumentParser):
         raise AppArgumentParserException(message)
 
 
-def line_animation(line, idx, limit=10):
+def line_animation(line, idx, limit=10, step=1):
     """ Animate long string """
+    line = line+' | '
     line_start = 0
     line_end = len(line)
-    line = (' ' * (limit - 1)) + line
-    if limit+idx > line_end:
-        line = line + ' '
-    short_line = line[line_start+idx:limit+idx]
-    idx += 1
+    short_line_start = line_start+idx
+    short_line_end = limit+idx
+    short_line = line[short_line_start:short_line_end]
+    add_line_end = abs(len(short_line)-limit)
+    if short_line_end > line_end:
+        short_line = short_line + line[0:add_line_end]
+    idx += step
     if idx > (line_end + limit) - 1:
         idx = 0
     return idx, short_line
@@ -110,11 +113,11 @@ class Player:
     dbus_properties = 'org.freedesktop.DBus.Properties'
     player_path = None
     status = {
-        'format': '{status} {artist} — {title}',
+        'format': '{artist} — {title}',
         'playing': '>',
         'paused': '||',
         'offline': 'X',
-        'size': 79,
+        'size': 10,
     }
 
     def __init__(self, opt=None):
@@ -160,19 +163,14 @@ class Player:
             props['Track']['Title'] = ''
         return props
 
-    def get_status_format(self, status=None):
+    def get_status_symbol(self, status=None):
         """ Pass in to Status format Symbols """
-        status_format = self.status['format']
+        symbol = self.status['offline']
         if status == 'playing':
-            status_format = status_format.replace(
-                '{status}', self.status['playing'])
+            symbol = self.status['playing']
         elif status == 'paused':
-            status_format = status_format.replace(
-                '{status}', self.status['paused'])
-        else:
-            status_format = status_format.replace(
-                '{status}', self.status['offline'])
-        return status_format
+            symbol = self.status['paused']
+        return symbol
 
 
 def cli(argv):
@@ -249,20 +247,22 @@ class Actions:
 
     def action_status(self):
         """ Get Status line """
+        status_line = ''
         prop = self.player.get_props()
-        status = self.player.get_status_format(
+        status_symbol = self.player.get_status_symbol(
             status=prop['Status'])
         if not self.player.offline:
-            status = status.format(
+            status_line = self.player.status['format'].format(
                 artist=prop['Track']['Artist'],
                 title=prop['Track']['Title'])
-        if len(status) > self.player.status['size']:
+        if len(status_line) > self.player.status['size']:
             ds = DevShm()
             idx = int(ds.get('index', 0))
-            idx, status = line_animation(status, idx, self.player.status['size'])
+            idx, status_line = line_animation(status_line, idx, self.player.status['size'], 3)
             ds.set('index', idx)
-        print(status, end='\r')
-        return status
+        status_line = status_symbol+status_line
+        print(status_line, end='\r')
+        return status_line
 
     def action_play(self):
         """ Player: play """
