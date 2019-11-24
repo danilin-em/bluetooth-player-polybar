@@ -256,10 +256,11 @@ class Actions:
                 artist=prop['Track']['Artist'],
                 title=prop['Track']['Title'])
         if len(status_line) > self.player.status['size']:
-            ds = DevShm()
-            idx = int(ds.get('index', 0))
-            idx, status_line = line_animation(status_line, idx, self.player.status['size'], 3)
-            ds.set('index', idx)
+            devshmem = DevShm()
+            idx = int(devshmem.get('index', 0))
+            idx, status_line = line_animation(status_line, idx,
+                                              self.player.status['size'], 3)
+            devshmem.set('index', idx)
         status_line = status_symbol+status_line
         print(status_line, end='\r')
         return status_line
