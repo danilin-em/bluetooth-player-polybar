@@ -15,7 +15,8 @@ class CliIfaceTest(unittest.TestCase):
         'status_format': None,
         'status_offline': None,
         'status_paused': None,
-        'status_playing': None
+        'status_playing': None,
+        'status_size': None,
     }
 
     def test_cli_parser(self):
