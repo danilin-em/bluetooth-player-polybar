@@ -257,8 +257,11 @@ class Actions:
                 artist=prop['Track']['Artist'],
                 title=prop['Track']['Title'])
         if len(status) > self.player.status['size']:
-            status = status
-        print(status)
+            ds = DevShm()
+            idx = int(ds.get('index', 0))
+            idx, status = line_animation(status, idx, self.player.status['size'])
+            ds.set('index', idx)
+        print(status, end='\r')
         return status
 
     def action_play(self):
