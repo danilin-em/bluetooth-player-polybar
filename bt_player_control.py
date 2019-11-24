@@ -30,6 +30,20 @@ class ErrorRaisingArgumentParser(argparse.ArgumentParser):
         raise AppArgumentParserException(message)
 
 
+def line_animation(line, idx, limit=10):
+    """ Animate long string """
+    line_start = 0
+    line_end = len(line)
+    line = (' ' * (limit - 1)) + line
+    if limit+idx > line_end:
+        line = line + ' '
+    short_line = line[line_start+idx:limit+idx]
+    idx += 1
+    if idx > (line_end + limit) - 1:
+        idx = 0
+    return idx, short_line
+
+
 def find_player_path():
     """ Default Player Finder """
     bus = dbus.SystemBus()
