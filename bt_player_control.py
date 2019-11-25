@@ -30,6 +30,23 @@ class ErrorRaisingArgumentParser(argparse.ArgumentParser):
         raise AppArgumentParserException(message)
 
 
+def line_animation(line, idx, limit=10, step=1):
+    """ Animate long string """
+    line = line+' | '
+    line_start = 0
+    line_end = len(line)
+    short_line_start = line_start+idx
+    short_line_end = limit+idx
+    short_line = line[short_line_start:short_line_end]
+    add_line_end = abs(len(short_line)-limit)
+    if short_line_end > line_end:
+        short_line = short_line + line[0:add_line_end]
+    idx += step
+    if idx > (line_end + limit) - 1:
+        idx = 0
+    return idx, short_line
+
+
 def find_player_path():
     """ Default Player Finder """
     bus = dbus.SystemBus()
@@ -42,6 +59,53 @@ def find_player_path():
     raise AppOfflineException('Bluetooth adapter not found')
 
 
+class DevShm:
+    """ Manager /dev/shm """
+    __namespace = None
+    __filepath = None
+
+    def __init__(self, namespace=__file__):
+        self.__set_namespace(str(namespace))
+
+    def __set_namespace(self, namespace):
+        """ Set Namespace """
+        self.__namespace = namespace.replace('.', '-')\
+            .replace('/', '-')\
+            .replace(' ', '_')\
+            .replace('\\', '-')
+        self.__set_filepath()
+        return self.__namespace
+
+    def get_namespace(self):
+        """ Get Namespace """
+        return self.__namespace
+
+    def __set_filepath(self):
+        """ Set File path """
+        self.__filepath = '/dev/shm/%s' % str(self.__namespace)
+        return self.__filepath
+
+    def get_filepath(self):
+        """ Get File path """
+        return self.__filepath
+
+    def set(self, name, value=None):
+        """ Set Value """
+        with open(self.__filepath+'-'+name, 'w+') as file:
+            file.write(str(value))
+        return value
+
+    def get(self, name, default=None):
+        """ Get Value """
+        value = default
+        try:
+            with open(self.__filepath+'-'+name, 'r') as file:
+                value = file.read()
+        except FileNotFoundError:
+            self.set(name, value)
+        return value
+
+
 class Player:
     """ Player DBus Wrapper """
     offline = False
@@ -49,10 +113,11 @@ class Player:
     dbus_properties = 'org.freedesktop.DBus.Properties'
     player_path = None
     status = {
-        'format': '{status} {artist} — {title}',
+        'format': '{artist} — {title}',
         'playing': '>',
         'paused': '||',
         'offline': 'X',
+        'size': 10,
     }
 
     def __init__(self, opt=None):
@@ -64,6 +129,8 @@ class Player:
             self.status['paused'] = opt.status_paused
         if opt.status_offline:
             self.status['offline'] = opt.status_offline
+        if opt.status_size:
+            self.status['size'] = opt.status_size
         if opt.player_path:
             self.player_path = opt.status_paused
         try:
@@ -96,19 +163,14 @@ class Player:
             props['Track']['Title'] = ''
         return props
 
-    def get_status_format(self, status=None):
+    def get_status_symbol(self, status=None):
         """ Pass in to Status format Symbols """
-        status_format = self.status['format']
+        symbol = self.status['offline']
         if status == 'playing':
-            status_format = status_format.replace(
-                '{status}', self.status['playing'])
+            symbol = self.status['playing']
         elif status == 'paused':
-            status_format = status_format.replace(
-                '{status}', self.status['paused'])
-        else:
-            status_format = status_format.replace(
-                '{status}', self.status['offline'])
-        return status_format
+            symbol = self.status['paused']
+        return symbol
 
 
 def cli(argv):
@@ -151,6 +213,11 @@ def cli(argv):
         metavar='SYMBOL',
         help='Status "Offline"')
     parser.add_argument(
+        '--status-size',
+        type=int,
+        metavar='LEN',
+        help='Status line size')
+    parser.add_argument(
         'action',
         type=str,
         choices=actions_names,
@@ -180,15 +247,23 @@ class Actions:
 
     def action_status(self):
         """ Get Status line """
+        status_line = ''
         prop = self.player.get_props()
-        status = self.player.get_status_format(
+        status_symbol = self.player.get_status_symbol(
             status=prop['Status'])
         if not self.player.offline:
-            status = status.format(
+            status_line = self.player.status['format'].format(
                 artist=prop['Track']['Artist'],
                 title=prop['Track']['Title'])
-        print(status)
-        return status
+        if len(status_line) > self.player.status['size']:
+            devshmem = DevShm()
+            idx = int(devshmem.get('index', 0))
+            idx, status_line = line_animation(status_line, idx,
+                                              self.player.status['size'], 3)
+            devshmem.set('index', idx)
+        status_line = status_symbol+status_line
+        print(status_line, end='\r')
+        return status_line
 
     def action_play(self):
         """ Player: play """
